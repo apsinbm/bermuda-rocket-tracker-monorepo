@@ -1,0 +1,53 @@
+name: Codex Code Review
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  codex-review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Review code with Codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt: |
+            Review the code changes in this repository with focus on:
+
+            1. **Code Quality & Best Practices**
+               - TypeScript/JavaScript patterns and anti-patterns
+               - React and React Native best practices
+               - Monorepo structure and organization
+
+            2. **Potential Bugs & Issues**
+               - Null/undefined handling
+               - Async/await error handling
+               - Memory leaks or performance issues
+               - Platform-specific issues (web vs mobile)
+
+            3. **Security Concerns**
+               - API key exposure
+               - Unsafe data handling
+               - XSS or injection vulnerabilities
+
+            4. **Architecture & Design**
+               - Component structure
+               - Service layer design
+               - Platform abstraction implementation
+
+            5. **Monorepo-Specific Issues**
+               - Circular dependencies
+               - Incorrect package imports
+               - Shared code usage
+
+            Provide actionable feedback with specific file locations and line numbers.
+
+          # Restrict Codex to read-only operations for security
+          sandbox: workspace-read-only
