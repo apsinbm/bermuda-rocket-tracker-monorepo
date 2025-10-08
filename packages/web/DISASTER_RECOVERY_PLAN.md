@@ -422,8 +422,8 @@ healthService.startHealthMonitoring(30);
 - Requires: GitHub authentication + team access
 
 **GitHub Repository:**
-- URL: https://github.com/[username]/bermuda-rocket-tracker
-- Actions: https://github.com/[username]/bermuda-rocket-tracker/actions
+- URL: https://github.com/apsinbm/bermuda-rocket-tracker-monorepo
+- Actions: https://github.com/apsinbm/bermuda-rocket-tracker-monorepo/actions
 
 **Monitoring Tools:**
 - UptimeRobot: [Your monitoring URL]
