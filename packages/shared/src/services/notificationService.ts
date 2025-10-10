@@ -27,10 +27,12 @@ export class NotificationService {
   private scheduledNotifications: Map<string, string[]> = new Map();
   private subscribers: Array<(status: NotificationStatus) => void> = [];
   private readonly SETTINGS_KEY = 'bermuda-rocket-notifications';
+  private settingsLoaded = false;
 
   constructor() {
     this.settings = this.getDefaultSettings();
-    this.loadSettingsAsync();
+    // Don't load settings in constructor - platform may not be initialized yet
+    // Settings will be loaded lazily on first access
   }
 
   private getStorage(): IStorageAdapter {
@@ -43,16 +45,30 @@ export class NotificationService {
 
   /**
    * Load notification settings asynchronously
+   * Only loads once - subsequent calls are no-ops
    */
   private async loadSettingsAsync(): Promise<void> {
+    if (this.settingsLoaded) {
+      return;
+    }
+
     try {
+      // Check if platform container is initialized before accessing storage
+      if (!PlatformContainer.has(PLATFORM_TOKENS.STORAGE)) {
+        console.warn('[NotificationService] Storage not available yet, using default settings');
+        this.settingsLoaded = true;
+        return;
+      }
+
       const storage = this.getStorage();
       const saved = await storage.getItem(this.SETTINGS_KEY);
       if (saved) {
         this.settings = { ...this.getDefaultSettings(), ...JSON.parse(saved) };
       }
+      this.settingsLoaded = true;
     } catch (error) {
       console.warn('Failed to load notification settings:', error);
+      this.settingsLoaded = true;
     }
   }
 
@@ -120,6 +136,9 @@ export class NotificationService {
    * Get current notification status
    */
   async getStatus(): Promise<NotificationStatus> {
+    // Ensure settings are loaded before returning status
+    await this.loadSettingsAsync();
+
     return {
       permission: await this.getPermission(),
       supported: this.isSupported(),
@@ -131,6 +150,9 @@ export class NotificationService {
    * Update notification settings
    */
   async updateSettings(newSettings: Partial<NotificationSettings>): Promise<void> {
+    // Ensure settings are loaded before updating
+    await this.loadSettingsAsync();
+
     this.settings = { ...this.settings, ...newSettings };
 
     // If enabling notifications, request permission
@@ -149,6 +171,9 @@ export class NotificationService {
    * Schedule notifications for launches
    */
   async scheduleNotifications(launches: LaunchWithVisibility[]): Promise<void> {
+    // Ensure settings are loaded before scheduling
+    await this.loadSettingsAsync();
+
     // Clear existing notifications
     await this.clearAllNotifications();
 

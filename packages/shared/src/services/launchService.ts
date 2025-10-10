@@ -13,16 +13,37 @@ interface LaunchCache {
 }
 
 let launchCache: LaunchCache | null = null;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
+
+// Smart cache duration based on proximity to next launch
+function getCacheDuration(launches: Launch[]): number {
+  if (!launches.length) return 60 * 60 * 1000; // 1 hour default
+
+  const now = Date.now();
+  const nextLaunch = launches[0];
+  const timeUntilLaunch = new Date(nextLaunch.net).getTime() - now;
+
+  // Very close launches need fresher data
+  if (timeUntilLaunch < 2 * 60 * 60 * 1000) return 5 * 60 * 1000; // 5 minutes if < 2 hours away
+  if (timeUntilLaunch < 24 * 60 * 60 * 1000) return 15 * 60 * 1000; // 15 minutes if < 24 hours away
+  if (timeUntilLaunch < 7 * 24 * 60 * 60 * 1000) return 30 * 60 * 1000; // 30 minutes if < 1 week away
+
+  return 60 * 60 * 1000; // 1 hour for distant launches
+}
 
 export function clearLaunchCache(): void {
   launchCache = null;
+  console.log('[LaunchService] Cache cleared - will fetch fresh data');
 }
 
 export async function fetchAllEastCoastLaunches(limit: number = 30): Promise<Launch[]> {
   // Check cache first - ensure cached data has enough entries for requested limit
   if (launchCache && Date.now() < launchCache.expiresAt && launchCache.data.length >= limit) {
+    console.log('[LaunchService] Using cached data (expires in', Math.round((launchCache.expiresAt - Date.now()) / 60000), 'minutes)');
     return launchCache.data.slice(0, limit);
+  }
+
+  if (launchCache) {
+    console.log('[LaunchService] Cache expired or insufficient, fetching fresh data');
   }
 
   try {
@@ -92,13 +113,15 @@ export async function fetchAllEastCoastLaunches(limit: number = 30): Promise<Lau
     const sortedLaunches = filteredLaunches
       .sort((a: Launch, b: Launch) => new Date(a.net).getTime() - new Date(b.net).getTime());
 
-    // Update cache with ALL filtered launches
+    // Update cache with ALL filtered launches using smart duration
     const now = Date.now();
+    const cacheDuration = getCacheDuration(sortedLaunches);
     launchCache = {
       data: sortedLaunches,
       timestamp: now,
-      expiresAt: now + CACHE_DURATION
+      expiresAt: now + cacheDuration
     };
+    console.log('[LaunchService] Cached', sortedLaunches.length, 'launches for', Math.round(cacheDuration / 60000), 'minutes');
 
     // Return only the requested limit
     const limitedResults = sortedLaunches.slice(0, limit);

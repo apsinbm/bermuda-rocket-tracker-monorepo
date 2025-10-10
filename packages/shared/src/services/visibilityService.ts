@@ -403,9 +403,13 @@ export async function getEnhancedTrajectoryInfo(launch: Launch): Promise<Traject
     
   } catch (error) {
     console.error('[VisibilityService] Error getting enhanced trajectory info:', error);
-    
-    // Ultimate fallback - use the old logic
-    return getTrajectoryInfo(launch.pad.name, launch.mission.orbit?.name, launch.mission.name);
+
+    // Ultimate fallback - use the old logic with null safety
+    return getTrajectoryInfo(
+      launch.pad?.name || 'Unknown Pad',
+      launch.mission?.orbit?.name,
+      launch.mission?.name || 'Unknown Mission'
+    );
   }
 }
 
@@ -976,9 +980,13 @@ export function calculateVisibilitySync(launch: Launch): VisibilityData {
   
   // Extract coordinates using helper function
   const coordinates = extractLaunchCoordinates(launch);
-  
-  // Use legacy trajectory info
-  const trajectoryInfo = getTrajectoryInfo(launch.pad.name, launch.mission.orbit?.name, launch.mission.name);
+
+  // Use legacy trajectory info with null safety
+  const trajectoryInfo = getTrajectoryInfo(
+    launch.pad?.name || 'Unknown Pad',
+    launch.mission?.orbit?.name,
+    launch.mission?.name || 'Unknown Mission'
+  );
   
   // Validate coordinates before calculations
   if (!coordinates.available) {

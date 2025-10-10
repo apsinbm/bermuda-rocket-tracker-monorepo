@@ -11,88 +11,117 @@ export interface RefreshSchedule {
 
 /**
  * Get refresh interval based on time until launch
+ * Matches exact user requirements for granular scanning
  */
 export function getRefreshInterval(timeUntilLaunch: number): RefreshSchedule {
   const minutes = Math.floor(timeUntilLaunch / (1000 * 60));
   const hours = Math.floor(minutes / 60);
-  
-  // Critical countdown phase - every 30 seconds
-  if (minutes <= 2) {
+  const days = Math.floor(hours / 24);
+
+  // <30 minutes: every 30 seconds
+  if (minutes < 30) {
     return {
-      interval: 30 * 1000, // 30 seconds
-      description: 'Critical countdown - T-2 minutes',
+      interval: 30 * 1000,
+      description: 'Critical countdown - every 30 seconds',
       phase: 'critical'
     };
   }
-  
-  // Final approach - every minute
-  if (minutes <= 8) {
+
+  // 30-60 minutes: every minute
+  if (minutes < 60) {
     return {
-      interval: 60 * 1000, // 1 minute
-      description: 'Final approach - T-8 minutes',
-      phase: 'final'
-    };
-  }
-  
-  // Pre-launch checks - every 2 minutes
-  if (minutes <= 15) {
-    return {
-      interval: 2 * 60 * 1000, // 2 minutes
-      description: 'Pre-launch checks - T-15 minutes',
-      phase: 'prelaunch'
-    };
-  }
-  
-  // Launch imminent - every 5 minutes
-  if (minutes <= 30) {
-    return {
-      interval: 5 * 60 * 1000, // 5 minutes
-      description: 'Launch imminent - T-30 minutes',
+      interval: 60 * 1000,
+      description: 'Launch imminent - every minute',
       phase: 'imminent'
     };
   }
-  
-  // Final hour - every 10 minutes
-  if (minutes <= 60) {
+
+  // 1-2 hours: every 5 minutes
+  if (hours < 2) {
     return {
-      interval: 10 * 60 * 1000, // 10 minutes
-      description: 'Final countdown hour - T-1 hour',
-      phase: 'countdown'
+      interval: 5 * 60 * 1000,
+      description: 'Final preparations - every 5 minutes',
+      phase: 'final_prep'
     };
   }
-  
-  // Launch day active - every 30 minutes
-  if (hours <= 6) {
+
+  // 2-3 hours: every 15 minutes
+  if (hours < 3) {
     return {
-      interval: 30 * 60 * 1000, // 30 minutes
-      description: 'Launch day active - T-6 hours',
-      phase: 'active'
+      interval: 15 * 60 * 1000,
+      description: 'Pre-launch - every 15 minutes',
+      phase: 'prelaunch'
     };
   }
-  
-  // Launch day monitoring - every hour
-  if (hours <= 12) {
+
+  // 3-12 hours: hourly
+  if (hours < 12) {
     return {
-      interval: 60 * 60 * 1000, // 1 hour
-      description: 'Launch day monitoring - T-12 hours',
-      phase: 'monitoring'
+      interval: 60 * 60 * 1000,
+      description: 'Launch day - hourly',
+      phase: 'launch_day'
     };
   }
-  
-  // Launch preparation - every 6 hours
-  if (hours <= 24) {
+
+  // 12-48 hours: every 6 hours
+  if (hours < 48) {
     return {
-      interval: 6 * 60 * 60 * 1000, // 6 hours
-      description: 'Launch preparation - T-24 hours',
+      interval: 6 * 60 * 60 * 1000,
+      description: 'Launch preparation - every 6 hours',
       phase: 'preparation'
     };
   }
-  
-  // Standard monitoring - every 12 hours
+
+  // 2-7 days: daily
+  if (days < 7) {
+    return {
+      interval: 24 * 60 * 60 * 1000,
+      description: 'Final week - daily',
+      phase: 'final_week'
+    };
+  }
+
+  // 7-30 days: weekly
+  if (days < 30) {
+    return {
+      interval: 7 * 24 * 60 * 60 * 1000,
+      description: 'Final month - weekly',
+      phase: 'final_month'
+    };
+  }
+
+  // 1-2 months: every 2 weeks
+  if (days < 60) {
+    return {
+      interval: 14 * 24 * 60 * 60 * 1000,
+      description: '1-2 months out - bi-weekly',
+      phase: 'two_months'
+    };
+  }
+
+  // 2-3 months: every 3 weeks
+  if (days < 90) {
+    return {
+      interval: 21 * 24 * 60 * 60 * 1000,
+      description: '2-3 months out - tri-weekly',
+      phase: 'three_months'
+    };
+  }
+
+  // 3-6 months: monthly
+  if (days < 180) {
+    return {
+      interval: 30 * 24 * 60 * 60 * 1000,
+      description: '3-6 months out - monthly',
+      phase: 'six_months'
+    };
+  }
+
+  // >6 months: every 2 months
   return {
-    interval: 12 * 60 * 60 * 1000, // 12 hours
-    description: 'Standard monitoring - >24 hours',
-    phase: 'standard'
+    interval: 60 * 24 * 60 * 60 * 1000,
+    description: 'Long-term - bi-monthly',
+    phase: 'long_term'
   };
 }
 

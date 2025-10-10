@@ -33,8 +33,9 @@ export class GeometricVisibilityService {
    * Get launch site coordinates based on launch pad location
    */
   private static getLaunchSiteCoords(launch: Launch): { lat: number; lng: number } {
-    const locationName = launch.pad.location.name.toLowerCase();
-    const padName = launch.pad.name.toLowerCase();
+    // Add null safety checks for pad location data
+    const locationName = launch.pad?.location?.name?.toLowerCase() || '';
+    const padName = launch.pad?.name?.toLowerCase() || '';
     
     // Check for specific facilities
     if (locationName.includes('wallops') || locationName.includes('virginia')) {
@@ -92,7 +93,7 @@ export class GeometricVisibilityService {
    */
   private static validateTrajectory(trajectoryPoints: TrajectoryPoint[], trajectoryInfo: any, launch: Launch) {
     const warnings: string[] = [];
-    const missionName = launch.mission.name;
+    const missionName = launch.mission?.name || 'Unknown Mission';
     
     if (trajectoryPoints.length === 0) {
       warnings.push('No trajectory points generated');

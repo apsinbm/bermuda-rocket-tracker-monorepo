@@ -16,21 +16,8 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
-// 3. Force Metro to resolve symlinked packages (workspace packages)
-config.resolver.disableHierarchicalLookup = false;
-
-// 4. Only process built files from shared package, not source files
-config.resolver.blockList = [
-  // Ignore shared package source files - only use dist/
-  /packages\/shared\/src\/.*/,
-];
-
-// 5. Ensure Metro doesn't try to transform node_modules except React Native
-config.transformer.getTransformOptions = async () => ({
-  transform: {
-    experimentalImportSupport: false,
-    inlineRequires: true,
-  },
-});
+// 3. Force unstable_enablePackageExports to use package.json "exports" field
+// This will use the "react-native" export from @bermuda/shared/package.json
+config.resolver.unstable_enablePackageExports = true;
 
 module.exports = config;

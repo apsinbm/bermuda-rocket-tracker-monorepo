@@ -1,5 +1,10 @@
 import { registerRootComponent } from 'expo';
+import { enableScreens } from 'react-native-screens';
 import { initializePlatform } from './src/platform-init';
+
+// Enable native screens for React Navigation
+// This prevents the library from using browser DOM APIs
+enableScreens();
 
 // Initialize platform adapters BEFORE importing App
 // This ensures storage and other platform services are ready

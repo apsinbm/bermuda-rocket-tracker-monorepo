@@ -96,6 +96,62 @@ export class FlightClubApiService {
     return Array.from(new Set(bases));
   }
 
+  /**
+   * Retry configuration
+   */
+  private static readonly MAX_RETRIES = 3;
+  private static readonly INITIAL_RETRY_DELAY = 1000; // 1 second
+
+  /**
+   * Delay with exponential backoff
+   */
+  private static async delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Fetch with exponential backoff retry logic
+   */
+  private static async fetchWithRetry(url: string, init: RequestInit, retries = this.MAX_RETRIES): Promise<Response> {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await fetch(url, init);
+
+        // Success - return immediately
+        if (response.ok) {
+          return response;
+        }
+
+        // Don't retry on 4xx errors (except 429 Too Many Requests)
+        if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+          return response; // Return error response without retry
+        }
+
+        // Retry on 5xx errors or 429 with exponential backoff
+        if (attempt < retries) {
+          const delayMs = this.INITIAL_RETRY_DELAY * Math.pow(2, attempt);
+          console.log(`[FlightClub] Retry ${attempt + 1}/${retries} after ${delayMs}ms for ${url}`);
+          await this.delay(delayMs);
+          continue;
+        }
+
+        return response; // Return error response after max retries
+      } catch (error) {
+        // Network errors - retry with exponential backoff
+        if (attempt < retries) {
+          const delayMs = this.INITIAL_RETRY_DELAY * Math.pow(2, attempt);
+          console.log(`[FlightClub] Network error, retry ${attempt + 1}/${retries} after ${delayMs}ms`);
+          await this.delay(delayMs);
+          continue;
+        }
+
+        throw error; // Throw after max retries
+      }
+    }
+
+    throw new Error('Max retries exceeded');
+  }
+
   private static async fetchThroughProxy(path: string, init: RequestInit): Promise<Response> {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     const errors: string[] = [];
@@ -103,7 +159,7 @@ export class FlightClubApiService {
     for (const base of this.getProxyBases()) {
       const url = `${base}${normalizedPath}`;
       try {
-        const response = await fetch(url, init);
+        const response = await this.fetchWithRetry(url, init);
         if (response.ok) {
           if (base !== this.DEFAULT_PROXY_BASE) {
             console.log(`[FlightClub] Using fallback proxy base: ${base}`);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { WeatherService, LaunchWeatherAssessment } from '@bermuda/shared';
 import { colors } from '../theme';
 import { typography } from '../theme';
 
@@ -7,33 +8,35 @@ interface WeatherWidgetProps {
   launchTime: Date | string;
 }
 
-interface WeatherData {
-  temperature: number;
-  conditions: string;
-  icon: string;
-}
-
 const WeatherWidget: React.FC<WeatherWidgetProps> = ({ launchTime }) => {
-  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weatherAssessment, setWeatherAssessment] = useState<LaunchWeatherAssessment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tooFarOut, setTooFarOut] = useState(false);
 
   useEffect(() => {
-    // Simulate weather data fetch
-    // In production, this would use weatherService from @bermuda/shared
     const fetchWeather = async () => {
       try {
         setLoading(true);
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Mock weather data
-        setWeather({
-          temperature: 72,
-          conditions: 'Clear Skies',
-          icon: '☀️',
-        });
+        // Calculate days until launch
+        const launchDate = typeof launchTime === 'string' ? new Date(launchTime) : launchTime;
+        const now = new Date();
+        const daysUntilLaunch = Math.ceil((launchDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Only show weather for launches within 14 days
+        if (daysUntilLaunch > 14) {
+          setTooFarOut(true);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch real weather data from OpenMeteo for Bermuda
+        const assessment = await WeatherService.getWeatherForLaunch(launchDate);
+        setWeatherAssessment(assessment);
+        setTooFarOut(false);
       } catch (error) {
-        // Handle error silently
+        console.error('[WeatherWidget] Failed to fetch weather:', error);
+        // Handle error silently - no weather data available
       } finally {
         setLoading(false);
       }
@@ -50,19 +53,54 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ launchTime }) => {
     );
   }
 
-  if (!weather) {
+  // Show message for launches more than 14 days away
+  if (tooFarOut) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.iconContainer}>
+          <Text style={styles.icon}>📅</Text>
+        </View>
+        <View style={styles.textContainer}>
+          <Text style={styles.label}>Weather Forecast</Text>
+          <Text style={styles.unavailableText}>
+            Weather forecast unavailable for launches more than 2 weeks away
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!weatherAssessment) {
     return null;
   }
+
+  // Map weather rating to icon and color
+  const getRatingDisplay = (rating: string) => {
+    switch (rating) {
+      case 'excellent': return { icon: '🌟', color: colors.success };
+      case 'good': return { icon: '☀️', color: colors.primary };
+      case 'fair': return { icon: '⛅', color: colors.warning };
+      case 'poor': return { icon: '☁️', color: colors.error };
+      case 'very_poor': return { icon: '🌧️', color: colors.error };
+      default: return { icon: '☀️', color: colors.textPrimary };
+    }
+  };
+
+  const ratingDisplay = getRatingDisplay(weatherAssessment.overallRating);
 
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>{weather.icon}</Text>
+        <Text style={styles.icon}>{ratingDisplay.icon}</Text>
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.label}>Expected Weather</Text>
-        <Text style={styles.conditions}>{weather.conditions}</Text>
-        <Text style={styles.temperature}>{weather.temperature}°F</Text>
+        <Text style={styles.label}>Weather for Launch (Bermuda)</Text>
+        <Text style={[styles.conditions, { color: ratingDisplay.color }]}>
+          {weatherAssessment.overallRating.replace('_', ' ').toUpperCase()}
+        </Text>
+        <Text style={styles.recommendation} numberOfLines={2}>
+          {weatherAssessment.recommendation}
+        </Text>
       </View>
     </View>
   );
@@ -105,10 +143,17 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: 2,
   },
-  temperature: {
-    ...typography.bodyLarge,
-    color: colors.primary,
-    fontWeight: '600',
+  recommendation: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 4,
+    fontSize: 11,
+  },
+  unavailableText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    fontSize: 13,
   },
 });
 

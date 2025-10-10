@@ -36,6 +36,7 @@ export { launchDelayDetectionService } from './services/launchDelayDetectionServ
 export type { LaunchScheduleChange } from './services/launchDelayDetectionService';
 export * as launchMatchingService from './services/launchMatchingService';
 export * as launchService from './services/launchService';
+export { clearLaunchCache } from './services/launchService';
 export * as launchUpdateScheduler from './services/launchUpdateScheduler';
 export { getRefreshInterval, formatRefreshStatus } from './services/launchUpdateScheduler';
 export * as notificationServiceNamespace from './services/notificationService';
@@ -48,9 +49,14 @@ export * as scheduleChangeDetectionService from './services/scheduleChangeDetect
 export { ScheduleChangeDetectionService } from './services/scheduleChangeDetectionService';
 export * as solarPositionCalculator from './services/solarPositionCalculator';
 export * as spaceLaunchScheduleService from './services/spaceLaunchScheduleService';
+export * as telemetryService from './services/telemetryService';
+export { TelemetryService } from './services/telemetryService';
+export type { TelemetryEvent, DataQualityIssue } from './services/telemetryService';
 export * as trajectoryMappingService from './services/trajectoryMappingService';
 export * as trajectoryService from './services/trajectoryService';
 export { clearProjectKuiperCache, getTrajectoryData } from './services/trajectoryService';
+export * as trajectoryValidationService from './services/trajectoryValidationService';
+export { validateTrajectoryData, validateTrajectoryMatchesLaunchSite, validateFlightClubDataSource } from './services/trajectoryValidationService';
 export * as visibilityService from './services/visibilityService';
 export { getBearingDirection } from './services/visibilityService';
 export * as weatherService from './services/weatherService';

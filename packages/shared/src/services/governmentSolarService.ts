@@ -34,6 +34,27 @@ const solarDataCache = new Map<string, { data: USNOSolarData; expires: number }>
 export class GovernmentSolarService {
 
   /**
+   * Create a fetch request with manual timeout (React Native compatible)
+   */
+  private static fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number = 10000): Promise<Response> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Request timeout'));
+      }, timeoutMs);
+
+      fetch(url, options)
+        .then(response => {
+          clearTimeout(timeout);
+          resolve(response);
+        })
+        .catch(error => {
+          clearTimeout(timeout);
+          reject(error);
+        });
+    });
+  }
+
+  /**
    * Get accurate solar data for a specific date
    * Tries government sources first, falls back to calculations
    */
@@ -88,17 +109,15 @@ export class GovernmentSolarService {
     const tz = this.getBermudaTimezoneOffset(date);
     
     const url = `${USNO_BASE_URL}?date=${dateStr}&coords=${coords}&tz=${tz}`;
-    
-    
-    const response = await fetch(url, {
+
+
+    const response = await this.fetchWithTimeout(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'BermudaRocketTracker/1.0'
-      },
-      // Add timeout for API calls
-      signal: AbortSignal.timeout(10000) // 10 second timeout
-    });
+      }
+    }, 10000);
 
     if (!response.ok) {
       throw new Error(`USNO API error: ${response.status} ${response.statusText}`);
@@ -137,15 +156,14 @@ export class GovernmentSolarService {
   private static async fetchSunriseSunsetOrgData(date: Date): Promise<USNOSolarData | null> {
     const dateStr = this.formatDateForAPI(date);
     const url = `${SUNRISE_SUNSET_BASE_URL}?lat=${BERMUDA_LAT}&lng=${BERMUDA_LNG}&date=${dateStr}&formatted=0`;
-    
-    
-    const response = await fetch(url, {
+
+
+    const response = await this.fetchWithTimeout(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
-      },
-      signal: AbortSignal.timeout(10000)
-    });
+      }
+    }, 10000);
 
     if (!response.ok) {
       throw new Error(`Sunrise-Sunset API error: ${response.status} ${response.statusText}`);

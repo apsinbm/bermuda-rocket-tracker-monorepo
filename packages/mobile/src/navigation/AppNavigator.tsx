@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StyleSheet, Text } from 'react-native';
 import { colors } from '../theme';
 import { Launch } from '@bermuda/shared';
@@ -24,7 +24,7 @@ export type TabParamList = {
 };
 
 const Tab = createBottomTabNavigator<TabParamList>();
-const Stack = createStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const TabNavigator = () => {
   return (
@@ -78,7 +78,7 @@ const AppNavigator = () => {
         headerStyle: styles.header,
         headerTintColor: colors.textPrimary,
         headerTitleStyle: styles.headerTitle,
-        cardStyle: styles.card,
+        contentStyle: styles.card,
       }}
     >
       <Stack.Screen

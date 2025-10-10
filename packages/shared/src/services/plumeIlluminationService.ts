@@ -165,10 +165,10 @@ export class PlumeIlluminationService {
     // Convert solar data times to minutes
     const sunriseMinutes = this.timeStringToMinutes(solarData.sunrise);
     const sunsetMinutes = this.timeStringToMinutes(solarData.sunset);
-    const civilTwilightStartMinutes = this.timeStringToMinutes(solarData.civilTwilightStart);
-    const civilTwilightEndMinutes = this.timeStringToMinutes(solarData.civilTwilightEnd);
-    const nauticalTwilightStartMinutes = this.timeStringToMinutes(solarData.nauticalTwilightStart);
-    const nauticalTwilightEndMinutes = this.timeStringToMinutes(solarData.nauticalTwilightEnd);
+    const civilTwilightStartMinutes = this.timeStringToMinutes(solarData.civil_twilight_begin);
+    const civilTwilightEndMinutes = this.timeStringToMinutes(solarData.civil_twilight_end);
+    const nauticalTwilightStartMinutes = this.timeStringToMinutes(solarData.nautical_twilight_begin);
+    const nauticalTwilightEndMinutes = this.timeStringToMinutes(solarData.nautical_twilight_end);
 
     let isDuringTwilight = false;
     let twilightType = 'none';
@@ -511,13 +511,19 @@ export class PlumeIlluminationService {
   }
 
   // Utility functions
-  private static timeStringToMinutes(timeString: string): number {
-    const [hours, minutes] = timeString.split(':').map(Number);
+  private static timeStringToMinutes(timeString: string | undefined): number {
+    if (!timeString) return 0;
+    const parts = timeString.split(':');
+    if (parts.length < 2) return 0;
+    const [hours, minutes] = parts.map(Number);
     return hours * 60 + minutes;
   }
 
-  private static timeStringToHour(timeString: string): number {
-    const [hours, minutes] = timeString.split(':').map(Number);
+  private static timeStringToHour(timeString: string | undefined): number {
+    if (!timeString) return 0;
+    const parts = timeString.split(':');
+    if (parts.length < 2) return 0;
+    const [hours, minutes] = parts.map(Number);
     return hours + minutes / 60;
   }
 
